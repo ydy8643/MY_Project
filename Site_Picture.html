@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>공사감독 현장 사진 관리 시스템</title>
+  <style>
+    /* ===== 전역 스타일 ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary:   #1a56db;
+      --primary-d: #1341b0;
+      --accent:    #f59e0b;
+      --bg:        #f1f5f9;
+      --card:      #ffffff;
+      --text:      #1e293b;
+      --sub:       #64748b;
+      --border:    #e2e8f0;
+      --danger:    #ef4444;
+      --success:   #22c55e;
+      --radius:    12px;
+      --shadow:    0 4px 20px rgba(0,0,0,.08);
+    }
+
+    body {
+      font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ===== 헤더 ===== */
+    header {
+      background: linear-gradient(135deg, #1a56db 0%, #0f3a8a 100%);
+      color: #fff;
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,.2);
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .header-logo span.icon { font-size: 1.5rem; }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .85rem;
+      color: rgba(255,255,255,.75);
+    }
+
+    .breadcrumb span { cursor: pointer; transition: color .2s; }
+    .breadcrumb span:hover { color: #fff; }
+    .breadcrumb .sep { opacity: .5; }
+    .breadcrumb .current { color: #fff; font-weight: 600; cursor: default; }
+
+    /* ===== 메인 레이아웃 ===== */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    /* ===== 페이지 뷰 (숨김/표시) ===== */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ===== 섹션 타이틀 ===== */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .section-title small {
+      font-size: .9rem;
+      font-weight: 400;
+      color: var(--sub);
+      margin-left: 8px;
+    }
+
+    /* ===== 버튼 ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-d); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(26,86,219,.3); }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+    }
+    .btn-danger:hover { background: #c62828; }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+    .btn-outline:hover { background: var(--primary); color: #fff; }
+
+    .btn-sm { padding: 6px 12px; font-size: .8rem; border-radius: 6px; }
+
+    /* ===== 카드 그리드 (공사 목록) ===== */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .project-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform .2s, box-shadow .2s;
+      border: 2px solid transparent;
+      position: relative;
+    }
+
+    .project-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(0,0,0,.12);
+      border-color: var(--primary);
+    }
+
+    .project-card-thumb {
+      width: 100%;
+      height: 150px;
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+    }
+
+    .project-card-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .project-card-body { padding: 16px; }
+
+    .project-card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .project-card-meta {
+      font-size: .8rem;
+      color: var(--sub);
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .project-card-actions {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 6px;
+      opacity: 0;
+      transition: opacity .2s;
+    }
+
+    .project-card:hover .project-card-actions { opacity: 1; }
+
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .9rem;
+      transition: all .2s;
+    }
+
+    .icon-btn-danger { background: var(--danger); color: #fff; }
+    .icon-btn-danger:hover { background: #c62828; }
+
+    /* ===== 날짜별 그룹 (공사 세부 페이지) ===== */
+    .date-group { margin-bottom: 32px; }
+
+    .date-group-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: linear-gradient(90deg, #1a56db11, transparent);
+      border-left: 4px solid var(--primary);
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 14px;
+    }
+
+    .date-badge {
+      background: var(--primary);
+      color: #fff;
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: .85rem;
+      font-weight: 700;
+    }
+
+    .date-count {
+      font-size: .82rem;
+      color: var(--sub);
+    }
+
+    /* ===== 사진 그리드 ===== */
+    .photos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+    }
+
+    .photo-item {
+      background: var(--card);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: transform .2s;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .photo-item:hover { transform: scale(1.02); }
+
+    .photo-item img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .photo-item-info {
+      padding: 8px 10px;
+      font-size: .78rem;
+      color: var(--sub);
+    }
+
+    .photo-item-desc {
+      font-size: .85rem;
+      color: var(--text);
+      font-weight: 500;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .photo-delete-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(239,68,68,.85);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      font-size: .8rem;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .photo-item:hover .photo-delete-btn { display: flex; }
+
+    /* ===== 모달 공통 ===== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(3px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s;
+    }
+
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+    .modal {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 28px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+      transform: translateY(20px);
+      transition: transform .25s;
+    }
+
+    .modal-overlay.open .modal { transform: translateY(0); }
+
+    .modal-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-body { display: flex; flex-direction: column; gap: 14px; }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+    label { font-size: .88rem; font-weight: 600; color: var(--text); }
+
+    input[type="text"],
+    input[type="date"],
+    textarea,
+    select {
+      padding: 10px 14px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: .9rem;
+      color: var(--text);
+      transition: border-color .2s;
+      background: #fff;
+      width: 100%;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    textarea { resize: vertical; min-height: 70px; }
+
+    /* ===== 파일 드롭존 ===== */
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 28px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .2s;
+      background: #f8fafc;
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--primary);
+      background: #eff6ff;
+    }
+
+    .dropzone .dz-icon { font-size: 2rem; margin-bottom: 8px; }
+    .dropzone .dz-text { font-size: .88rem; color: var(--sub); }
+    .dropzone .dz-text b { color: var(--primary); }
+
+    #fileInput { display: none; }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .preview-item { position: relative; }
+
+    .preview-item img {
+      width: 100%;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 6px;
+      display: block;
+    }
+
+    .preview-remove {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: var(--danger);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: .7rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    /* ===== 라이트박스 ===== */
+    .lightbox-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.92);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 14px;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s;
+    }
+
+    .lightbox-overlay.open { opacity: 1; pointer-events: all; }
+
+    .lightbox-overlay img {
+      max-width: 90vw;
+      max-height: 80vh;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 0 40px rgba(0,0,0,.5);
+    }
+
+    .lightbox-caption { color: #fff; font-size: .9rem; opacity: .8; text-align: center; }
+
+    .lightbox-close {
+      position: absolute;
+      top: 18px;
+      right: 22px;
+      background: rgba(255,255,255,.1);
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      cursor: pointer;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .2s;
+    }
+
+    .lightbox-close:hover { background: rgba(255,255,255,.25); }
+
+    /* ===== 빈 상태 ===== */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--sub);
+    }
+
+    .empty-state .empty-icon { font-size: 3.5rem; margin-bottom: 12px; }
+    .empty-state p { font-size: 1rem; margin-bottom: 18px; }
+
+    /* ===== 필터/검색 바 ===== */
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .filter-bar input[type="text"] {
+      width: auto;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    /* ===== 태그 배지 ===== */
+    .tag {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: .75rem;
+      font-weight: 600;
+    }
+
+    .tag-blue { background: #dbeafe; color: #1d4ed8; }
+    .tag-green { background: #dcfce7; color: #15803d; }
+    .tag-orange { background: #ffedd5; color: #c2410c; }
+
+    /* ===== 통계 바 ===== */
+    .stats-row {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 14px 20px;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 140px;
+    }
+
+    .stat-icon { font-size: 1.6rem; }
+
+    .stat-num { font-size: 1.3rem; font-weight: 700; color: var(--text); }
+    .stat-label { font-size: .78rem; color: var(--sub); }
+
+    /* ===== 토스트 ===== */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      background: #1e293b;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: .88rem;
+      box-shadow: 0 4px 16px rgba(0,0,0,.2);
+      animation: slideUp .3s ease forwards;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== 반응형 ===== */
+    @media (max-width: 600px) {
+      header { padding: 0 16px; }
+      .container { padding: 20px 14px; }
+      .section-title { font-size: 1.2rem; }
+      .projects-grid { grid-template-columns: 1fr 1fr; }
+      .photos-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    }
+
+    @media (max-width: 400px) {
+      .projects-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ===== 날짜 필터 칩 ===== */
+    .chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .chip {
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 2px solid var(--border);
+      background: #fff;
+      font-size: .8rem;
+      cursor: pointer;
+      transition: all .2s;
+      color: var(--sub);
+      font-weight: 500;
+    }
+
+    .chip.active, .chip:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: #eff6ff;
+    }
+
+    /* ===== 공사 상태 색상 ===== */
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 4px;
+    }
+    .status-ongoing { background: var(--success); }
+    .status-done    { background: var(--sub); }
+    .status-paused  { background: var(--accent); }
+  </style>
+</head>
+<body>
+
+<!-- ===== 헤더 ===== -->
+<header>
+  <div class="header-logo" onclick="goHome()">
+    <span class="icon">🏗️</span>
+    <span>공사현장 사진 관리</span>
+  </div>
+  <div class="breadcrumb" id="breadcrumb">
+    <span class="current">홈</span>
+  </div>
+</header>
+
+<!-- ===== 토스트 컨테이너 ===== -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ===== 라이트박스 ===== -->
+<div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightboxImg" src="" alt="" />
+  <div class="lightbox-caption" id="lightboxCaption"></div>
+</div>
+
+<!-- ===== 메인 컨테이너 ===== -->
+<div class="container">
+
+  <!-- ========== 페이지 1: 홈 (공사 목록) ========== -->
+  <div class="page active" id="page-home">
+
+    <div class="section-header">
+      <div>
+        <div class="section-title">📋 공사 목록<small>현장별 사진 관리</small></div>
+      </div>
+      <button class="btn btn-primary" onclick="openAddProjectModal()">＋ 새 공사 등록</button>
+    </div>
+
+    <!-- 통계 -->
+    <div class="stats-row" id="statsRow"></div>
+
+    <!-- 검색 -->
+    <div class="filter-bar">
+      <input type="text" id="projectSearch" placeholder="🔍 공사명 검색..." oninput="renderProjects()" />
+      <select id="projectStatusFilter" onchange="renderProjects()">
+        <option value="">전체 상태</option>
+        <option value="ongoing">진행중</option>
+        <option value="paused">일시중단</option>
+        <option value="done">완료</option>
+      </select>
+    </div>
+
+    <div class="projects-grid" id="projectsGrid"></div>
+  </div>
+
+  <!-- ========== 페이지 2: 공사 세부 (날짜별 사진) ========== -->
+  <div class="page" id="page-project">
+
+    <div class="section-header">
+      <div>
+        <div class="section-title" id="projectDetailTitle">공사명</div>
+        <div style="font-size:.85rem;color:var(--sub);margin-top:4px;" id="projectDetailMeta"></div>
+      </div>
+      <button class="btn btn-primary" onclick="openUploadModal()">📷 사진 업로드</button>
+    </div>
+
+    <!-- 날짜 필터 칩 -->
+    <div style="margin-bottom:20px;">
+      <div style="font-size:.85rem;color:var(--sub);margin-bottom:8px;font-weight:600;">날짜 필터</div>
+      <div class="chip-group" id="dateChips"></div>
+    </div>
+
+    <!-- 사진 목록 -->
+    <div id="photosArea"></div>
+  </div>
+
+</div><!-- /container -->
+
+
+<!-- ===== 모달: 새 공사 등록 ===== -->
+<div class="modal-overlay" id="modalAddProject">
+  <div class="modal">
+    <div class="modal-title">🏗️ 새 공사 등록</div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>공사명 *</label>
+        <input type="text" id="inp_projName" placeholder="예) 강남구 OO빌딩 신축공사" />
+      </div>
+      <div class="form-group">
+        <label>발주처</label>
+        <input type="text" id="inp_projClient" placeholder="예) (주)OO건설" />
+      </div>
+      <div class="form-group">
+        <label>현장 위치</label>
+        <input type="text" id="inp_projLocation" placeholder="예) 서울특별시 강남구 테헤란로 123" />
+      </div>
+      <div style="display:flex;gap:10px;">
+        <div class="form-group" style="flex:1;">
+          <label>착공일</label>
+          <input type="date" id="inp_projStart" />
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>준공예정일</label>
+          <input type="date" id="inp_projEnd" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>공사 상태</label>
+        <select id="inp_projStatus">
+          <option value="ongoing">진행중</option>
+          <option value="paused">일시중단</option>
+          <option value="done">완료</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>비고</label>
+        <textarea id="inp_projNote" placeholder="추가 설명을 입력하세요..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalAddProject')">취소</button>
+      <button class="btn btn-primary" onclick="saveProject()">등록</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 모달: 사진 업로드 ===== -->
+<div class="modal-overlay" id="modalUpload">
+  <div class="modal" style="max-width:580px;">
+    <div class="modal-title">📷 사진 업로드</div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>촬영 날짜 *</label>
+        <input type="date" id="inp_photoDate" />
+      </div>
+      <div class="form-group">
+        <label>설명 (선택)</label>
+        <input type="text" id="inp_photoDesc" placeholder="예) 1층 기초 배근 작업" />
+      </div>
+      <div class="form-group">
+        <label>사진 선택 *</label>
+        <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()"
+             ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+          <div class="dz-icon">🖼️</div>
+          <div class="dz-text">클릭하거나 사진을 드래그하세요<br><b>여러 장 동시 업로드 가능</b></div>
+        </div>
+        <input type="file" id="fileInput" multiple accept="image/*" onchange="onFileSelect(event)" />
+        <div class="preview-grid" id="previewGrid"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalUpload')">취소</button>
+      <button class="btn btn-primary" onclick="savePhotos()">업로드</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ================================================================
+//  데이터 관리 (LocalStorage)
+// ================================================================
+const DB_KEY = 'constSiteDB_v2';
+
+function loadDB() {
+  try {
+    return JSON.parse(localStorage.getItem(DB_KEY)) || { projects: [] };
+  } catch { return { projects: [] }; }
+}
+
+function saveDB(db) {
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+}
+
+// ================================================================
+//  상태 변수
+// ================================================================
+let currentProjectId = null;
+let selectedFiles    = [];   // 업로드 대기 파일 객체 배열
+let previewURLs      = [];   // 미리보기 object URL 배열
+let activeDateFilter = 'all';
+
+// ================================================================
+//  유틸
+// ================================================================
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+function formatDate(d) {
+  if (!d) return '-';
+  const dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric' });
+}
+
+function formatDateShort(d) {
+  if (!d) return '-';
+  const dt = new Date(d + 'T00:00:00');
+  return `${dt.getFullYear()}.${String(dt.getMonth()+1).padStart(2,'0')}.${String(dt.getDate()).padStart(2,'0')}`;
+}
+
+function statusLabel(s) {
+  return { ongoing:'진행중', paused:'일시중단', done:'완료' }[s] || s;
+}
+
+function statusClass(s) {
+  return { ongoing:'status-ongoing', paused:'status-paused', done:'status-done' }[s] || '';
+}
+
+function tagClass(s) {
+  return { ongoing:'tag-green', paused:'tag-orange', done:'tag-blue' }[s] || 'tag-blue';
+}
+
+function showToast(msg, icon='✅') {
+  const tc = document.getElementById('toastContainer');
+  const t  = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = `<span>${icon}</span>${msg}`;
+  tc.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ================================================================
+//  페이지 전환
+// ================================================================
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+}
+
+function goHome() {
+  currentProjectId = null;
+  activeDateFilter = 'all';
+  showPage('home');
+  updateBreadcrumb();
+  renderProjects();
+}
+
+function goProject(projectId) {
+  currentProjectId = projectId;
+  activeDateFilter = 'all';
+  showPage('project');
+  updateBreadcrumb();
+  renderProjectDetail();
+}
+
+function updateBreadcrumb() {
+  const bc = document.getElementById('breadcrumb');
+  if (!currentProjectId) {
+    bc.innerHTML = `<span class="current">홈</span>`;
+    return;
+  }
+  const db = loadDB();
+  const p  = db.projects.find(x => x.id === currentProjectId);
+  bc.innerHTML = `
+    <span onclick="goHome()">홈</span>
+    <span class="sep">›</span>
+    <span class="current">${p ? p.name : '공사 세부'}</span>
+  `;
+}
+
+// ================================================================
+//  홈 – 공사 목록 렌더링
+// ================================================================
+function renderProjects() {
+  const db      = loadDB();
+  const search  = (document.getElementById('projectSearch')?.value || '').toLowerCase();
+  const sfilt   = document.getElementById('projectStatusFilter')?.value || '';
+
+  // 통계
+  const total   = db.projects.length;
+  const ongoing = db.projects.filter(p => p.status === 'ongoing').length;
+  const totalPh = db.projects.reduce((s, p) => s + (p.photos||[]).length, 0);
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><span class="stat-icon">📁</span><div><div class="stat-num">${total}</div><div class="stat-label">전체 공사</div></div></div>
+    <div class="stat-card"><span class="stat-icon">🔨</span><div><div class="stat-num">${ongoing}</div><div class="stat-label">진행중</div></div></div>
+    <div class="stat-card"><span class="stat-icon">📸</span><div><div class="stat-num">${totalPh}</div><div class="stat-label">전체 사진</div></div></div>
+  `;
+
+  let list = db.projects;
+  if (search) list = list.filter(p => p.name.toLowerCase().includes(search) || (p.location||'').toLowerCase().includes(search));
+  if (sfilt)  list = list.filter(p => p.status === sfilt);
+
+  const grid = document.getElementById('projectsGrid');
+
+  if (list.length === 0) {
+    grid.innerHTML = `
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon">📂</div>
+        <p>${total === 0 ? '등록된 공사가 없습니다.' : '검색 결과가 없습니다.'}</p>
+        ${total === 0 ? `<button class="btn btn-primary" onclick="openAddProjectModal()">＋ 첫 공사 등록하기</button>` : ''}
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(p => {
+    const photoCount = (p.photos||[]).length;
+    const thumb = photoCount > 0 ? `<img src="${p.photos[p.photos.length-1].data}" alt="thumb" onerror="this.style.display='none'"/>` : '🏗️';
+    return `
+      <div class="project-card" onclick="goProject('${p.id}')">
+        <div class="project-card-thumb">${thumb}</div>
+        <div class="project-card-actions" onclick="event.stopPropagation()">
+          <button class="icon-btn icon-btn-danger" title="삭제" onclick="deleteProject('${p.id}')">🗑</button>
+        </div>
+        <div class="project-card-body">
+          <div class="project-card-title">${p.name}</div>
+          <div class="project-card-meta">
+            <span><span class="status-dot ${statusClass(p.status)}"></span>${statusLabel(p.status)}</span>
+            <span>📸 ${photoCount}장</span>
+            ${p.location ? `<span>📍 ${p.location}</span>` : ''}
+          </div>
+          ${p.client ? `<div style="margin-top:6px;font-size:.78rem;color:var(--sub);">발주처: ${p.client}</div>` : ''}
+          <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+            <span class="tag ${tagClass(p.status)}">${statusLabel(p.status)}</span>
+            ${p.startDate ? `<span class="tag tag-blue">${formatDateShort(p.startDate)} ~</span>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ================================================================
+//  공사 세부 페이지 렌더링
+// ================================================================
+function renderProjectDetail() {
+  const db = loadDB();
+  const p  = db.projects.find(x => x.id === currentProjectId);
+  if (!p) { goHome(); return; }
+
+  document.getElementById('projectDetailTitle').textContent = '🏗️ ' + p.name;
+  document.getElementById('projectDetailMeta').innerHTML = [
+    p.client   ? `발주처: ${p.client}` : '',
+    p.location ? `📍 ${p.location}` : '',
+    p.startDate ? `착공: ${formatDate(p.startDate)}` : '',
+    p.endDate   ? `준공예정: ${formatDate(p.endDate)}` : '',
+  ].filter(Boolean).join(' &nbsp;|&nbsp; ');
+
+  const photos = p.photos || [];
+
+  // 날짜별 그룹화
+  const groups = {};
+  photos.forEach(ph => {
+    const d = ph.date || '날짜 미지정';
+    if (!groups[d]) groups[d] = [];
+    groups[d].push(ph);
+  });
+
+  const dates = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+
+  // 날짜 칩 렌더링
+  const chipGroup = document.getElementById('dateChips');
+  chipGroup.innerHTML = [
+    `<div class="chip ${activeDateFilter==='all'?'active':''}" onclick="setDateFilter('all')">전체 (${photos.length}장)</div>`,
+    ...dates.map(d => `<div class="chip ${activeDateFilter===d?'active':''}" onclick="setDateFilter('${d}')">${formatDateShort(d)} (${groups[d].length})</div>`)
+  ].join('');
+
+  // 사진 렌더링
+  const area = document.getElementById('photosArea');
+
+  if (photos.length === 0) {
+    area.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📷</div>
+        <p>업로드된 사진이 없습니다.</p>
+        <button class="btn btn-primary" onclick="openUploadModal()">📷 첫 사진 업로드</button>
+      </div>`;
+    return;
+  }
+
+  const filteredDates = activeDateFilter === 'all' ? dates : dates.filter(d => d === activeDateFilter);
+
+  area.innerHTML = filteredDates.map(d => {
+    const items = groups[d];
+    return `
+      <div class="date-group">
+        <div class="date-group-header">
+          <span class="date-badge">${formatDate(d)}</span>
+          <span class="date-count">${items.length}장의 사진</span>
+        </div>
+        <div class="photos-grid">
+          ${items.map(ph => `
+            <div class="photo-item" onclick="openLightbox('${ph.id}')">
+              <img src="${ph.data}" alt="${ph.desc||''}" loading="lazy" />
+              <button class="photo-delete-btn" onclick="event.stopPropagation();deletePhoto('${ph.id}')">✕</button>
+              <div class="photo-item-info">
+                ${ph.desc ? `<div class="photo-item-desc">${ph.desc}</div>` : ''}
+                <div>${formatDateShort(ph.date)}</div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function setDateFilter(date) {
+  activeDateFilter = date;
+  renderProjectDetail();
+}
+
+// ================================================================
+//  라이트박스
+// ================================================================
+function openLightbox(photoId) {
+  const db = loadDB();
+  const p  = db.projects.find(x => x.id === currentProjectId);
+  if (!p) return;
+  const ph = (p.photos||[]).find(x => x.id === photoId);
+  if (!ph) return;
+
+  document.getElementById('lightboxImg').src = ph.data;
+  document.getElementById('lightboxCaption').textContent =
+    [ph.desc, ph.date ? formatDate(ph.date) : ''].filter(Boolean).join(' | ');
+  document.getElementById('lightbox').classList.add('open');
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+
+// ================================================================
+//  모달 열기/닫기
+// ================================================================
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  if (id === 'modalUpload') clearUploadForm();
+}
+
+// 외부 클릭 시 모달 닫기
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// ================================================================
+//  공사 등록
+// ================================================================
+function openAddProjectModal() {
+  // 폼 초기화
+  ['inp_projName','inp_projClient','inp_projLocation','inp_projStart','inp_projEnd','inp_projNote'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('inp_projStatus').value = 'ongoing';
+  openModal('modalAddProject');
+}
+
+function saveProject() {
+  const name = document.getElementById('inp_projName').value.trim();
+  if (!name) { showToast('공사명을 입력해주세요.', '⚠️'); return; }
+
+  const db = loadDB();
+  const project = {
+    id:        genId(),
+    name,
+    client:    document.getElementById('inp_projClient').value.trim(),
+    location:  document.getElementById('inp_projLocation').value.trim(),
+    startDate: document.getElementById('inp_projStart').value,
+    endDate:   document.getElementById('inp_projEnd').value,
+    status:    document.getElementById('inp_projStatus').value,
+    note:      document.getElementById('inp_projNote').value.trim(),
+    photos:    [],
+    createdAt: new Date().toISOString(),
+  };
+
+  db.projects.push(project);
+  saveDB(db);
+  closeModal('modalAddProject');
+  renderProjects();
+  showToast(`"${name}" 공사가 등록되었습니다.`);
+}
+
+// ================================================================
+//  공사 삭제
+// ================================================================
+function deleteProject(id) {
+  const db = loadDB();
+  const p  = db.projects.find(x => x.id === id);
+  if (!p) return;
+  if (!confirm(`"${p.name}" 공사와 모든 사진을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+  db.projects = db.projects.filter(x => x.id !== id);
+  saveDB(db);
+  renderProjects();
+  showToast('공사가 삭제되었습니다.', '🗑️');
+}
+
+// ================================================================
+//  사진 업로드 모달
+// ================================================================
+function openUploadModal() {
+  clearUploadForm();
+  document.getElementById('inp_photoDate').value = new Date().toISOString().slice(0,10);
+  openModal('modalUpload');
+}
+
+function clearUploadForm() {
+  document.getElementById('inp_photoDate').value = '';
+  document.getElementById('inp_photoDesc').value = '';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('previewGrid').innerHTML = '';
+  selectedFiles = [];
+  previewURLs.forEach(u => URL.revokeObjectURL(u));
+  previewURLs = [];
+}
+
+// ===== 파일 선택 =====
+function onFileSelect(e) {
+  addFiles(Array.from(e.target.files));
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.add('dragover');
+}
+
+function onDragLeave() {
+  document.getElementById('dropzone').classList.remove('dragover');
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.remove('dragover');
+  addFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')));
+}
+
+function addFiles(files) {
+  files.forEach(f => {
+    selectedFiles.push(f);
+    const url = URL.createObjectURL(f);
+    previewURLs.push(url);
+  });
+  renderPreviews();
+}
+
+function removePreview(idx) {
+  URL.revokeObjectURL(previewURLs[idx]);
+  selectedFiles.splice(idx, 1);
+  previewURLs.splice(idx, 1);
+  renderPreviews();
+}
+
+function renderPreviews() {
+  const grid = document.getElementById('previewGrid');
+  grid.innerHTML = previewURLs.map((url, i) => `
+    <div class="preview-item">
+      <img src="${url}" alt="preview ${i+1}" />
+      <button class="preview-remove" onclick="removePreview(${i})">✕</button>
+    </div>`).join('');
+}
+
+// ===== 사진 저장 =====
+function savePhotos() {
+  const date = document.getElementById('inp_photoDate').value;
+  const desc = document.getElementById('inp_photoDesc').value.trim();
+
+  if (!date) { showToast('촬영 날짜를 선택해주세요.', '⚠️'); return; }
+  if (selectedFiles.length === 0) { showToast('업로드할 사진을 선택해주세요.', '⚠️'); return; }
+
+  const db = loadDB();
+  const p  = db.projects.find(x => x.id === currentProjectId);
+  if (!p) return;
+
+  let loaded = 0;
+  const total = selectedFiles.length;
+
+  selectedFiles.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      p.photos.push({
+        id:        genId(),
+        date,
+        desc,
+        data:      e.target.result,   // base64
+        fileName:  file.name,
+        uploadedAt: new Date().toISOString(),
+      });
+      loaded++;
+      if (loaded === total) {
+        saveDB(db);
+        closeModal('modalUpload');
+        renderProjectDetail();
+        showToast(`${total}장의 사진이 업로드되었습니다. (${formatDate(date)})`);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ================================================================
+//  사진 삭제
+// ================================================================
+function deletePhoto(photoId) {
+  if (!confirm('이 사진을 삭제하시겠습니까?')) return;
+  const db = loadDB();
+  const p  = db.projects.find(x => x.id === currentProjectId);
+  if (!p) return;
+  p.photos = p.photos.filter(ph => ph.id !== photoId);
+  saveDB(db);
+  renderProjectDetail();
+  showToast('사진이 삭제되었습니다.', '🗑️');
+}
+
+// ================================================================
+//  키보드 단축키
+// ================================================================
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('lightbox').classList.remove('open');
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
+// ================================================================
+//  초기 실행
+// ================================================================
+renderProjects();
+</script>
+</body>
+</html>
